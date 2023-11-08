@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import { signIn } from '@/auth';
 import { sql } from '@vercel/postgres';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -77,7 +78,6 @@ export async function updateInvoice(
     status: formData.get('status'),
   });
 
-
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
@@ -112,5 +112,19 @@ export async function deleteInvoice(id: string) {
     return {
       message: 'Database error: Failed to delete invoice.',
     };
+  }
+}
+
+export async function authenticate(
+  prevState: string | undefined,
+  formData: FormData
+) {
+  try {
+    await signIn('credentials', Object.fromEntries(formData));
+  } catch (error) {
+    if ((error as Error).message.includes('CredentialsSignin')) {
+      return 'CredentialSignin';
+    }
+    throw error;
   }
 }
